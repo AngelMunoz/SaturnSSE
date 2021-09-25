@@ -5,6 +5,7 @@ open Saturn.Endpoint.Router
 open Microsoft.AspNetCore.Http
 open System
 open System.IO
+open System.Text.Json
 open FSharp.Control.Reactive
 
 type INotifierService =
@@ -56,13 +57,16 @@ let sse next (ctx: HttpContext) =
             |> Observable.subscribe
                 (fun filename ->
                     task {
-                        do! res.WriteAsync $"event:reload\ndata:{filename}\n\n"
+                        let data =
+                            JsonSerializer.Serialize({| filename = filename |})
+
+                        do! res.WriteAsync $"event:reload\ndata:{data}\n\n"
                         do! res.Body.FlushAsync()
                     }
                     |> Async.AwaitTask
-                    |> Async.Start)
+                    |> Async.StartImmediate)
 
-        do! res.WriteAsync($"event:start\ndata:{DateTime.Now}\n\n")
+        do! res.WriteAsync($"id:{ctx.Connection.Id}\nevent:start\ndata:{DateTime.Now}\n\n")
         do! res.Body.FlushAsync()
 
         ctx.RequestAborted.Register
@@ -77,6 +81,7 @@ let sse next (ctx: HttpContext) =
         return! text "" next ctx
     }
 
+// you can add as many SSE endpoints as you want!
 let appRouter = router { get "/sse" sse }
 
 [<EntryPoint>]
