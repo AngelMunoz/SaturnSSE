@@ -1,3 +1,3 @@
 # Server Sent Events
 
-This sample combines SSE and FileWatcher to emulate a reload on change kind of a feature
+This sample combines SSE and FileWatcher to notify the client when a file has changed
